@@ -1,0 +1,10 @@
+class CollectedDataType:
+    STACK_TRACE = "STACK_TRACE"
+    TRAINING_LOG = "TRAINING_LOG"
+    HARDWARE_METRIC = "HARDWARE_METRIC"
+    GENERIC = "GENERIC"
+
+class CollectedNodeType:
+    TRAIN_NODE = "TRAIN_NODE"
+    INFER_NODE = "INFER_NODE"
+    COLOC_NODE = "COLOC_NODE"
