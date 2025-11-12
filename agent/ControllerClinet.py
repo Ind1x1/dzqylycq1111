@@ -1,43 +1,41 @@
-import importlib
-import os
+import pickle
 import threading
-import time
-
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
-
-from common.singleton import Singleton
-from common import comm
+from typing import Optional
 
 import requests
 
 from agent.data_collector.constants import CollectedNodeType
-from common.constants import BasicClass
+from common import comm
+from common.comm import BaseRequest, BaseResponse
+from common.log import default_logger as logger
+from common.singleton import Singleton
 from util import env_util
 from util.comm_util import find_free_port
-from common.log import default_logger as logger
+from util.func_util import retry
 
 
-#OPTIMIZE: HTTPsClinet
+# OPTIMIZE: HTTPsClinet
 
 class ControllerClinet(Singleton, ABC):
-    """ControllerClient provides some APIs connect with the conntroller 
-    service via http call
+    """ControllerClient provides HTTP-based APIs to communicate with controller service."""
 
-    Args:
-        master_addr: the master address
-        node_id (int), the unique and ordered node ID assigned by autoRL.
-        node_type: the job type of node contains "TRAIN_NODE", "INFER_NODE" and "COLOC_NODE".
-
-        timeout (int): the timeout second of requests.
-    """
     _instance_lock = threading.Lock()
 
-    def __init__(self, master_addr: str, node_id: int, node_type: CollectedNodeType, timeout: int = 10):
+    def __init__(
+        self,
+        master_addr: str,
+        node_id: int,
+        node_type: CollectedNodeType,
+        timeout: int = 10,
+    ):
         logger.info(
-            f"ControllerClient initialized with master_addr: 
-            {master_addr}, node_id: {node_id}, node_type: 
-            {node_type}, timeout: {timeout}"
+            "ControllerClient initialized with master_addr=%s, node_id=%s, "
+            "node_type=%s, timeout=%s",
+            master_addr,
+            node_id,
+            node_type,
+            timeout,
         )
         self._timeout = timeout
         self._master_addr = master_addr
@@ -47,59 +45,82 @@ class ControllerClinet(Singleton, ABC):
         self._worker_local_process_id = env_util.get_worker_local_process_id()
         self._ddp_server_port = find_free_port()
 
+    def _serialize_message(self, message: object) -> bytes:
+        try:
+            return pickle.dumps(message)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to serialize message {message}: {exc}") from exc
+
+    def _gen_request(self, message: object) -> BaseRequest:
+        return BaseRequest(
+            node_id=self._node_id,
+            node_type=self._node_type,
+            data=self._serialize_message(message),
+        )
+
+    def report(self, message: object) -> BaseResponse:
+        return self._report(message)
+
+    def get(self, message: object):
+        return self._get(message)
+
     @retry()
     @abstractmethod
-    def _report(self, mssage:comm.Message):
+    def _report(self, message: object) -> BaseResponse:
         """Report the message to the controller service."""
-        pass
 
     @retry()
     @abstractmethod
-    def _get(self, message:comm.Message):
+    def _get(self, message: object):
         """Get the message from the controller service."""
-        pass
 
-    #TODO: add more APIs here
+    # TODO: add more APIs here
+
 
 class HttpControllerClient(ControllerClinet):
-    def __init__(self, 
-                 master_addr: str, 
-                 node_id: int, 
-                 node_type: CollectedNodeType, 
-                 timeout: int = 10
+    def __init__(
+        self,
+        master_addr: str,
+        node_id: int,
+        node_type: CollectedNodeType,
+        timeout: int = 10,
     ):
-        super(HttpControllerClient, self).__init__(
-            master_addr, node_id, node_type, timeout
-        )
-    
+        super().__init__(master_addr, node_id, node_type, timeout)
+
     def _get_http_request_url(self, path: str) -> str:
         return "http://" + self._master_addr + path
 
-    @retry()
-    def _report(self, message: comm.Message):
-        with requests.post(
-            self._get_http_request_url("/report"),
-            json=self._gen_request(message).to_json(),
-        ) as response:
-            if response.status_code != 200:
-                error_msg = f"Failed to report master with http request: {type(message)}."
-                raise RuntimeError(error_msg)
-            response_data: BaseResponse = comm.deserialize_message(
-                response.content
+    def _handle_response(self, response: requests.Response) -> BaseResponse:
+        if response.status_code != 200:
+            error_msg = (
+                f"HTTP request failed with status={response.status_code}, "
+                f"content={response.text}"
             )
-            return response_data
+            raise RuntimeError(error_msg)
+
+        response_data: Optional[BaseResponse] = comm.deserialize_message(response.content)
+        if response_data is None:
+            raise RuntimeError("Failed to deserialize BaseResponse from controller.")
+        return response_data
 
     @retry()
-    def _get(self, message: comm.Message):
-        with requests.post(
+    def _report(self, message: object) -> BaseResponse:
+        response = requests.post(
+            self._get_http_request_url("/report"),
+            json=self._gen_request(message).to_json(),
+            timeout=self._timeout,
+        )
+        return self._handle_response(response)
+
+    @retry()
+    def _get(self, message: object):
+        response = requests.post(
             self._get_http_request_url("/get"),
             json=self._gen_request(message).to_json(),
-        ) as response:
-            if response.status_code != 200:
-                error_msg = f"Failed to get from master with http request: {type(message)}."
-                raise RuntimeError(error_msg)
-            response_data: BaseResponse = comm.deserialize_message(
-                response.content
-            )
-            return comm.deserialize_message(response_data.data)
-        
+            timeout=self._timeout,
+        )
+        response_data = self._handle_response(response)
+        if not response_data.data:
+            return None
+        return comm.deserialize_message(response_data.data)
+ 

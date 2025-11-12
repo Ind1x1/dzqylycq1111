@@ -5,6 +5,7 @@ from typing import Dict, List
 
 #OPTIMIZE: built-in pickle 
 import pickle
+from common.log import default_logger as logger
 from common.serialize import JsonSerializable
 
 
