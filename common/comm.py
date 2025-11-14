@@ -69,6 +69,12 @@ class BaseResponse(Message):
             data=base64.b64decode(json_data.get("data")),
         )
 
+@dataclass
+class GPUStats(Message):
+    index: int = 0
+    total_memory_mb: int = 0
+    used_memory_mb: int = 0
+    gpu_utilization: float = 0
 
 @dataclass
 class StateRequest(Message):
