@@ -7,7 +7,7 @@ from agent.data_collector.constants import (
     CollectedDataType,
     CollectedNodeType,
 )
-from util import env_util
+from common import env_util
 
 class CollectedData(metaclass=ABCMeta):
     """
@@ -93,9 +93,9 @@ class WorkerTrainingMetric(CollectedData):
         timestamp: int = 0,
         data_type: str = CollectedDataType.GENERIC,
         data_content: str = "",
-        node_id=env_util.get_node_id(),
-        node_type=env_util.get_node_type(),
-        node_rank=env_util.get_node_rank(),
+        node_id=env_utils.get_node_id(),
+        node_type=env_utils.get_node_type(),
+        node_rank=env_utils.get_node_rank(),
         is_final_result=False,
         need_report=False,
     ):
@@ -136,9 +136,9 @@ class TrainingLog(CollectedData):
         self,
         timestamp: int = 0,
         logs: Optional[List[str]] = None,
-        node_id=env_util.get_node_id(),
-        node_type=env_util.get_node_type(),
-        node_rank=env_util.get_node_rank(),
+        node_id=env_utils.get_node_id(),
+        node_type=env_utils.get_node_type(),
+        node_rank=env_utils.get_node_rank(),
     ):
         if logs is None:
             data_content = ""

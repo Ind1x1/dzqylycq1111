@@ -10,3 +10,9 @@ class NodeType(object):
     INFER_NODE = "INFER_NODE"
     COLOC_NODE = "COLOC_NODE"
     TEMP_NODE = "TEMP_NODE"
+
+class AcceleratorType(object):
+    NVIDIA_GPU = "NVIDIA_GPU"
+
+class NodeEnv(object):
+    MONITOR_ENABLE = "AUTO_RL_MONITOR_ENABLE"

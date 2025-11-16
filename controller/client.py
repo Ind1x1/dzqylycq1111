@@ -10,7 +10,7 @@ from common import comm
 from common.comm import BaseRequest, BaseResponse, StateRequest
 from common.log import default_logger as logger
 from common.singleton import Singleton
-from util import env_util
+from common import env_utils
 from util.comm_util import find_free_port
 from util.func_util import retry
 
@@ -31,8 +31,8 @@ class ControllerClient(Singleton, ABC):
         self._timeout = timeout
         self._servicers_addr = servicers_addr
 
-        # self._node_ip = env_util.get_node_ip()
-        # self._worker_local_process_id = env_util.get_worker_local_process_id()
+        # self._node_ip = env_utils.get_node_ip()
+        # self._worker_local_process_id = env_utils.get_worker_local_process_id()
         # self._ddp_server_port = find_free_port()
 
         logger.info(

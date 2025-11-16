@@ -6,15 +6,15 @@ import time
 from common.log import default_logger as logger
 from common.singleton import Singleton
 from monitor.resource import ResourceMonitor
-from common.constants import NodeType, AcceleratorType
-from common import env_util
+from common.constants import NodeType, AcceleratorType, NodeEnv
+from common import env_utils
 
 class RLHFTrainingMonitor(Singleton):
     def __init__(
         self, 
         node_type: NodeType, 
         node_uid: int, 
-        gpu_type: AcceleratorType = AcceleratorType.NVIDIA_GPU
+        gpu_type: AcceleratorType = AcceleratorType.NVIDIA_GPU,
         metrics_path: str = "",
     ):
         """
@@ -30,6 +30,7 @@ class RLHFTrainingMonitor(Singleton):
         if os.path.exists(metrics_path):
             os.remove(metrics_path)
         self._metrics_path = metrics_path
+        self._resource_monitor = ResourceMonitor(gpu_type=gpu_type, node_type=node_type)
 
     def start(self):
         if os.getenv(NodeEnv.MONITOR_ENABLE, "false") != "true":
@@ -39,7 +40,7 @@ class RLHFTrainingMonitor(Singleton):
             return
         thread = threading.Thread(
             target = self._periodically_report,
-            name = "node_reporter"
+            name = "node_reporter",
             daemon = True
         )
         thread.start()
