@@ -20,7 +20,10 @@ class TrainingLogCollector(DataCollector):
 
     def collect_data(self) -> TrainingLog:
         if not self._log_file or not self._log_file.exists():
-            return TrainingLog()
+            training_log = TrainingLog()
+            # Store empty log in message queue
+            self.store_data(training_log)
+            return training_log
 
         raw_logs = read_last_n_lines(str(self._log_file), self._n_line)
 
@@ -32,13 +35,16 @@ class TrainingLogCollector(DataCollector):
         logs = [_to_text(line) for line in raw_logs]
 
         if logs:
-            start_str = "DLRover agent started with:"
+            start_str = "AutoRL agent started with:"
             for idx, text in enumerate(logs):
                 if start_str in text:
                     logs = logs[idx:]
                     break
 
-        return TrainingLog(logs=logs)
+        training_log = TrainingLog(logs=logs)
+        # Store collected log in message queue
+        self.store_data(training_log)
+        return training_log
 
     def is_enabled(self) -> bool:
         return True

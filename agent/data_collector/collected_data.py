@@ -7,7 +7,7 @@ from agent.data_collector.constants import (
     CollectedDataType,
     CollectedNodeType,
 )
-from common import env_util
+from common import env_utils
 
 class CollectedData(metaclass=ABCMeta):
     """
@@ -114,8 +114,9 @@ class WorkerTrainingMetric(CollectedData):
         return self._need_report
 
     def is_resolvable(self):
-        if self.data_type == DiagnosisDataType.XPU_TIMER_METRIC:
-            return True
+        # TODO: 需要定义 DiagnosisDataType 或使用 CollectedDataType
+        # if self.data_type == DiagnosisDataType.XPU_TIMER_METRIC:
+        #     return True
         # TODO: add more resolvable metric type later
         return False
 
@@ -159,3 +160,89 @@ class TrainingLog(CollectedData):
         if not self.data_content:
             return []
         return [line for line in self.data_content.splitlines()]
+
+
+class ResourceData(CollectedData):
+    """
+    Worker's resource usage data.
+    
+    Args:
+        timestamp (datetime): Timestamp of diagnosis data.
+        used_memory_mb (int): Used memory in MB.
+        cpu_percent (float): CPU usage percentage (0.0-1.0).
+        current_cpu (float): Current CPU usage.
+        gpu_stats (list): GPU statistics list.
+        node_id (int): Node ID. Defaults to -1.
+        node_type (str): Node type. Defaults to "".
+        node_rank (int): Node rank. Defaults to -1.
+    """
+
+    def __init__(
+        self,
+        timestamp: int = 0,
+        used_memory_mb: int = 0,
+        cpu_percent: float = 0.0,
+        current_cpu: float = 0.0,
+        gpu_stats: Optional[List] = None,
+        node_id=env_utils.get_node_id(),
+        node_type=env_utils.get_node_type(),
+        node_rank=env_utils.get_node_rank(),
+    ):
+        # Convert resource data to JSON string for data_content
+        resource_dict = {
+            "used_memory_mb": used_memory_mb,
+            "cpu_percent": cpu_percent,
+            "current_cpu": current_cpu,
+            "gpu_stats": gpu_stats or [],
+        }
+        data_content = json.dumps(resource_dict)
+        
+        super().__init__(
+            timestamp,
+            CollectedDataType.HARDWARE_METRIC,
+            data_content,
+            node_id,
+            node_type,
+            node_rank,
+        )
+        self._used_memory_mb = used_memory_mb
+        self._cpu_percent = cpu_percent
+        self._current_cpu = current_cpu
+        self._gpu_stats = gpu_stats or []
+
+    @property
+    def used_memory_mb(self) -> int:
+        return self._used_memory_mb
+
+    @property
+    def cpu_percent(self) -> float:
+        return self._cpu_percent
+
+    @property
+    def current_cpu(self) -> float:
+        return self._current_cpu
+
+    @property
+    def gpu_stats(self) -> List:
+        return self._gpu_stats
+
+    @classmethod
+    def from_resource_dict(cls, resource_dict: dict, **kwargs):
+        """
+        Create ResourceData from resource dictionary.
+        
+        Args:
+            resource_dict: Dictionary containing resource data
+            **kwargs: Additional arguments for CollectedData (node_id, node_type, etc.)
+        """
+        # Extract node_type from dict if present, otherwise use kwargs or default
+        node_type = kwargs.pop("node_type", resource_dict.pop("node_type", None))
+        
+        return cls(
+            used_memory_mb=resource_dict.get("used_memory_mb", 0),
+            cpu_percent=resource_dict.get("cpu_percent", 0.0),
+            current_cpu=resource_dict.get("current_cpu", 0.0),
+            gpu_stats=resource_dict.get("gpu_stats", []),
+            node_type=node_type,
+            **kwargs
+        )

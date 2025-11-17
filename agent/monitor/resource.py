@@ -9,6 +9,7 @@ from common.comm import GPUstats
 from common.constants import NodeEnv, NodeType, AcceleratorType
 from common.log import default_logger as logger
 from common.singleton import Singleton
+from agent.data_collector.collected_data import ResourceData
 
 def get_process_cpu_percent():
     """Get the cpu percent of the current process."""
@@ -93,6 +94,7 @@ class ResourceMonitor(Singleton):
         self._gpu_type = gpu_type
         self._gpu_stats: list[GPUStats] = []
         self._node_type = node_type
+
         self._Node_Server = NodeServer.singleton_instance()
 
     def start(self):
@@ -125,13 +127,22 @@ class ResourceMonitor(Singleton):
             #OPTIMIZE: not supported for other
             pass
 
-        current_cpu = round(cpu_percent * self._total_cpu, 2)
-        #FIXME 这里应该是report到上层的一个封装，构建一个消息队列以供Client消费
-        self._collector_server._report(used_meme, current_cpu, self._gpu_stats)
-
+        current_cpu = round(cpu_percent * self._total_cpu, 2)        
         logger.debug(
-            "Reported resource usage for {self._node_type}: used_mem={used_mem}, current_cpu={current_cpu}, gpu_stats={self._gpu_stats}"
+            f"Reported resource usage for {self._node_type}: used_mem={used_mem}, current_cpu={current_cpu}, gpu_stats={self._gpu_stats}"
         )
+        
+        # Create and return ResourceData object for ResourceCollector to store in message queue
+        # Client can consume data via HTTP server /consume_queue endpoint
+        resource_data = ResourceData(
+            used_memory_mb=used_mem,
+            cpu_percent=cpu_percent,
+            current_cpu=current_cpu,
+            gpu_stats=self._gpu_stats,
+            node_type=self._node_type,
+        )
+        return resource_data
+        
 
     def _monitor_resource(self):
         logger.info(f"ResourceMonitor started monitoring resource for {self._node_type}")
