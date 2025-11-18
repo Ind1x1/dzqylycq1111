@@ -1,0 +1,27 @@
+class BasicClass(object):
+    LOG_LEVEL_ENV = "AUTO_RL_LOG_LEVEL"
+
+class CommunicationReqMeta(object):
+    COMM_META_JOB_UID = "job_uid"
+    COMM_META_JOB_UID_INVALID_MSG = "Job uid is invalid"
+
+class NodeType(object):
+    TRAIN_NODE = "TRAIN_NODE"
+    INFER_NODE = "INFER_NODE"
+    COLOC_NODE = "COLOC_NODE"
+    TEMP_NODE = "TEMP_NODE"
+
+class AcceleratorType(object):
+    NVIDIA_GPU = "NVIDIA_GPU"
+
+class NodeEnv(object):
+    MONITOR_ENABLE = "AUTO_RL_MONITOR_ENABLE"
+
+class CollectorType(object):
+    LOG_COLLECTOR = "LOG_COLLECTOR"
+    RESOURCE_COLLECTOR = "RESOURCE_COLLECTOR"
+    TRAINING_COLLECTOR = "TRAINING_COLLECTOR"
+    STACK_TRACE_COLLECTOR = "STACK_TRACE_COLLECTOR"
+    METRIC_COLLECTOR = "METRIC_COLLECTOR"
+
+    DUMMY_COLLECTOR = "DUMMY_COLLECTOR"
