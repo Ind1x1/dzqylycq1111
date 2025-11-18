@@ -91,7 +91,7 @@ class WorkerTrainingMetric(CollectedData):
     def __init__(
         self,
         timestamp: int = 0,
-        data_type: str = CollectedDataType.GENERIC,
+        data_type: str = CollectedDataType.TRAINING_METRIC,
         data_content: str = "",
         node_id=env_utils.get_node_id(),
         node_type=env_utils.get_node_type(),
@@ -199,7 +199,7 @@ class ResourceData(CollectedData):
         
         super().__init__(
             timestamp,
-            CollectedDataType.HARDWARE_METRIC,
+            CollectedDataType.RESOURCE_METRIC,
             data_content,
             node_id,
             node_type,

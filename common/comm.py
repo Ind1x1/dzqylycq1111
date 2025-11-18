@@ -7,6 +7,7 @@ from typing import Dict, List
 import pickle
 from common.log import default_logger as logger
 from common.serialize import JsonSerializable
+from common.constants import CollectorType
 
 
 def deserialize_message(data: bytes):
@@ -77,25 +78,29 @@ class GPUStats(Message):
     gpu_utilization: float = 0
 
 @dataclass
-class StateRequest(Message):
+class CollectorRequest(Message):
     """Request to get state from a specific collector type.
     
     Args:
-        state_type: Type of state to collect. Options: "log", "resource", "stack"
+        collector_type: Type of collector to collect. Options: "log", "resource", "stack"
         node_id: Node ID (optional)
     """
-    state_type: str = ""  # "log", "resource", "stack"....
+    collector_type: CollectorType = CollectorType.DUMMY_COLLECTOR  # "log", "resource", "stack"....
     node_id: int = -1
     
     def to_json(self):
         return {
-            "state_type": self.state_type,
+            "collector_type": self.collector_type,
             "node_id": self.node_id,
         }
     
     @staticmethod
     def from_json(json_data):
-        return StateRequest(
-            state_type=json_data.get("state_type", ""),
+        collector_type = json_data.get("collector_type", CollectorType.DUMMY_COLLECTOR)
+        # Ensure collector_type is a CollectorType value (string)
+        if collector_type == "":
+            collector_type = CollectorType.DUMMY_COLLECTOR
+        return CollectorRequest(
+            collector_type=collector_type,
             node_id=json_data.get("node_id", -1),
         )

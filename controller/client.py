@@ -5,9 +5,9 @@ from typing import Dict, Optional
 
 import requests
 
-from agent.data_collector.constants import CollectedNodeType
+from common.constants import CollectorType
 from common import comm
-from common.comm import BaseRequest, BaseResponse, StateRequest
+from common.comm import BaseRequest, BaseResponse, CollectorRequest
 from common.log import default_logger as logger
 from common.singleton import Singleton
 from common import env_utils
@@ -95,14 +95,14 @@ class HttpControllerClient(ControllerClient):
     @retry()
     def get_state(
         self,
-        state_type: str,
+        collector_type: CollectorType,
         servicer_id: Optional[int] = None,
     ) -> Optional[object]:
         target_id = self._resolve_servicer_id(servicer_id)
-        state_request = StateRequest(state_type=state_type, node_id=target_id)
+        collector_request = CollectorRequest(collector_type=collector_type, node_id=target_id)
         request = BaseRequest(
             node_id=target_id,
-            data=self._serialize_message(state_request),
+            data=self._serialize_message(collector_request),
         )
 
         try:
@@ -116,7 +116,7 @@ class HttpControllerClient(ControllerClient):
                 logger.warning(
                     "Failed to get state from servicer %s for %s: success=%s, data_len=%s",
                     target_id,
-                    state_type,
+                    collector_type,
                     response_data.success,
                     len(response_data.data),
                 )
@@ -125,6 +125,6 @@ class HttpControllerClient(ControllerClient):
             return comm.deserialize_message(response_data.data)
         except Exception as exc:
             logger.error(
-                "Failed to get state from servicer %s for %s: %s", target_id, state_type, exc
+                "Failed to get state from servicer %s for %s: %s", target_id, collector_type, exc
             )
             return None

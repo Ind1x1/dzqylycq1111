@@ -95,8 +95,6 @@ class ResourceMonitor(Singleton):
         self._gpu_stats: list[GPUStats] = []
         self._node_type = node_type
 
-        self._Node_Server = NodeServer.singleton_instance()
-
     def start(self):
         log.info(f"ResourceMonitor started for {self._node_type}")
 

@@ -7,19 +7,17 @@ from typing import Dict, List, Optional, Tuple
 import tornado.web
 
 from common import comm
-from common.comm import BaseRequest, BaseResponse, StateRequest
-from common.constants import CommunicationReqMeta
+from common.comm import BaseRequest, BaseResponse, CollectorRequest
+from common.constants import CollectorType, CommunicationReqMeta
 from common.http_server import TornadoHTTPServer
 from common.log import default_logger as logger
 
-from agent.data_collector.collected import Collector
-
+from agent.data_collector.data_collector import DataCollector
 
 class ControllerServicer(ABC):
     """Controller service base class."""
     def __init__(
-        self, collectors: 
-        Optional[Dict[str, Collector]] = None
+        self, collectors: Optional[Dict[CollectorType, DataCollector]] = None
     ):
         self._collectors = collectors or {}
         self._lock = threading.Lock()
@@ -78,46 +76,47 @@ class HttpControllerServicer(ControllerServicer):
         """
         Get state from a specific collector based on request.
         
-        Master client sends a request specifying which state type to collect (log, resource, stack).
+        Master client sends a request specifying which collector type to collect (log, resource, stack).
         This method routes to the appropriate collector and returns the state.
         
         Args:
-            request: BaseRequest containing StateRequest in data field
+            request: BaseRequest containing CollectorRequest in data field
             
         Returns:
             BaseResponse with collected state data, or error if collector not found/available
         """
         try:
             if not request.data:
-                logger.error("StateRequest data is empty.")
+                logger.error("CollectorRequest data is empty.")
                 return BaseResponse(success=False)
             
-            state_request = pickle.loads(request.data)
-            if not isinstance(state_request, StateRequest):
-                logger.error(f"Invalid StateRequest type: {type(state_request)}")
+            collector_request = pickle.loads(request.data)
+            if not isinstance(collector_request, CollectorRequest):
+                logger.error(f"Invalid CollectorRequest type: {type(collector_request)}")
                 return BaseResponse(success=False)
             
-            state_type = state_request.state_type.lower()
+            # collector_type is guaranteed to be CollectorType value (e.g., "LOG_COLLECTOR")
+            collector_type = collector_request.collector_type
         except Exception as exc:
-            logger.error(f"Failed to deserialize StateRequest: {exc}")
+            logger.error(f"Failed to deserialize CollectorRequest: {exc}")
             return BaseResponse(success=False)
         
-        collector = self._collectors.get(state_type)
+        collector = self._collectors.get(collector_type)
         if collector is None:
-            logger.warning(f"Collector for state_type '{state_type}' is not configured.")
+            logger.warning(f"Collector for collector_type '{collector_type}' is not configured.")
             return BaseResponse(success=False)
         
         try:
             state = collector.report_state()
             if state is None:
-                logger.warning(f"Collector '{state_type}' returned None state.")
+                logger.warning(f"Collector '{collector_type}' returned None state.")
                 return BaseResponse(success=False)
             
             state_data = pickle.dumps(state)
-            logger.info(f"[HttpControllerServicer] Collected {state_type} state successfully")
+            logger.info(f"[HttpControllerServicer] Collected {collector_type} state successfully")
             return BaseResponse(success=True, data=state_data)
         except Exception as exc:
-            logger.error(f"Failed to collect state from {state_type} collector: {exc}")
+            logger.error(f"Failed to collect state from {collector_type} collector: {exc}")
             return BaseResponse(success=False)
     
     def consume_queue_data(self, request: BaseRequest) -> BaseResponse:
@@ -125,52 +124,52 @@ class HttpControllerServicer(ControllerServicer):
         Consume data from collector's message queue.
         
         Client sends a request specifying which collector's queue to consume from.
-        This method consumes (gets and removes) the oldest data from the queue.
+        This method consumes (gets and removes) the latest data from the queue.
         
         Args:
-            request: BaseRequest containing StateRequest in data field with state_type
+            request: BaseRequest containing CollectorRequest in data field with collector_type
             
         Returns:
             BaseResponse with consumed data, or error if collector not found/queue is empty
         """
         try:
             if not request.data:
-                logger.error("StateRequest data is empty.")
+                logger.error("CollectorRequest data is empty.")
                 return BaseResponse(success=False)
             
-            state_request = pickle.loads(request.data)
-            if not isinstance(state_request, StateRequest):
-                logger.error(f"Invalid StateRequest type: {type(state_request)}")
+            collector_request = pickle.loads(request.data)
+            if not isinstance(collector_request, CollectorRequest):
+                logger.error(f"Invalid CollectorRequest type: {type(collector_request)}")
                 return BaseResponse(success=False)
             
-            state_type = state_request.state_type.lower()
+            # collector_type is guaranteed to be CollectorType value (e.g., "LOG_COLLECTOR")
+            collector_type = collector_request.collector_type
         except Exception as exc:
-            logger.error(f"Failed to deserialize StateRequest: {exc}")
+            logger.error(f"Failed to deserialize CollectorRequest: {exc}")
             return BaseResponse(success=False)
         
-        #FIXME: 这里需要重构一下
-        collector = self._collectors.get(state_type)
+        collector = self._collectors.get(collector_type)
         if collector is None:
-            logger.warning(f"Collector for state_type '{state_type}' is not configured.")
+            logger.warning(f"Collector for collector_type '{collector_type}' is not configured.")
             return BaseResponse(success=False)
         
         try:
             # Check if collector has consume_data method (DataCollector instance)
             if not hasattr(collector, 'consume_data'):
-                logger.warning(f"Collector '{state_type}' does not support queue consumption.")
+                logger.warning(f"Collector '{collector_type}' does not support queue consumption.")
                 return BaseResponse(success=False)
             
-            # Consume data from queue (removes oldest item)
+            # Consume data from queue (removes latest item)
             data = collector.consume_data()
             if data is None:
-                logger.info(f"Queue for collector '{state_type}' is empty.")
+                logger.info(f"Queue for collector '{collector_type}' is empty.")
                 return BaseResponse(success=False)
             
             data_bytes = pickle.dumps(data)
-            logger.info(f"[HttpControllerServicer] Consumed data from {state_type} queue successfully")
+            logger.info(f"[HttpControllerServicer] Consumed data from {collector_type} queue successfully")
             return BaseResponse(success=True, data=data_bytes)
         except Exception as exc:
-            logger.error(f"Failed to consume data from {state_type} collector: {exc}")
+            logger.error(f"Failed to consume data from {collector_type} collector: {exc}")
             return BaseResponse(success=False)
 
 
@@ -229,7 +228,7 @@ def create_http_controller_handler(
         host: Server host address
         port: Server port
         servicer: Optional pre-configured servicer instance
-        collectors: Dict mapping state_type to collector, e.g., {"log": log_collector, "resource": resource_collector}
+        collectors: Dict mapping collector_type to collector, e.g., {"log": log_collector, "resource": resource_collector}
         
     Returns:
         Tuple of (TornadoHTTPServer, HttpControllerServicer)

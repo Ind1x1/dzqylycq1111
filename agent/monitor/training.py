@@ -3,9 +3,12 @@ import os
 import threading
 import time
 
+
+from agent.data_collector.collected_data import WorkerTrainingMetric
+from agent.data_collector.constants import CollectedDataType
 from common.log import default_logger as logger
 from common.singleton import Singleton
-from monitor.resource import ResourceMonitor
+from agent.monitor.resource import ResourceMonitor
 from common.constants import NodeType, AcceleratorType, NodeEnv
 from common import env_utils
 
@@ -22,7 +25,6 @@ class RLHFTrainingMonitor(Singleton):
         """
         self._last_timestamp = 0
         self._start_time = 0
-        #FIXME: 这里应该是report到上层的一个封装，构建一个消息队列以供Client消费
         self._group_rank = env_utils.get_group_rank()
         self._node_type = node_type
         self._node_uid = node_uid
@@ -48,21 +50,42 @@ class RLHFTrainingMonitor(Singleton):
     def stop(self):
         self._resource_monitor.stop()
 
-    def report_step(self):
+    def report_step(self) -> WorkerTrainingMetric:
+        """
+        Report training step metrics from metrics file.
+        
+        Returns:
+            WorkerTrainingMetric: Training metric data, or None if not available
+        """
         if self._group_rank != 0:
-            return
+            return None
         try:
             if not os.path.exists(self._metrics_path):
-                return
+                return None
             with open(self._metrics_path, "r") as f:
                 record = json.load(f)
                 step = record.get("step", 0)
                 timestamp = record.get("timestamp", 0)
+            
             if step > 0 and timestamp - self._last_timestamp > 15:
                 self._last_timestamp = timestamp
-                #FIXME
+                
+                # Convert record to JSON string for data_content
+                data_content = json.dumps(record)
+                
+                # Create and return WorkerTrainingMetric
+                metric = WorkerTrainingMetric(
+                    timestamp=timestamp,
+                    data_type=CollectedDataType.GENERIC,
+                    data_content=data_content,
+                    node_type=self._node_type,
+                )
+                logger.debug(f"Reported training step {step} at timestamp {timestamp}")
+                return metric
+            return None
         except Exception as e:
             logger.error(f"Failed to report step: {e}")
+            return None
 
     def _periodically_report(self):
         logger.info(f"RLHFTrainingMonitor started reporting metrics for {self._node_type}")

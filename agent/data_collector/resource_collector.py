@@ -10,7 +10,8 @@ class ResourceCollector(DataCollector):
     def __init__(self):
         super().__init__()
         self._monitor = ResourceMonitor().singleton_instance()
-
+        self._collector_type = CollectorType.RESOURCE_COLLECTOR
+        
     def collect_data(self) -> object:
         # Get ResourceData object from monitor (may be running in subprocess)
         resource_data = self._monitor.report_resource()

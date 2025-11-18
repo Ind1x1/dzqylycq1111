@@ -17,6 +17,7 @@ class TrainingLogCollector(DataCollector):
         super().__init__()
         self._log_file = Path(log_file) if log_file else None
         self._n_line = max(0, n_line)
+        self._collector_type = CollectorType.LOG_COLLECTOR
 
     def collect_data(self) -> TrainingLog:
         if not self._log_file or not self._log_file.exists():
