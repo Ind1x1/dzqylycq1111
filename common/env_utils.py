@@ -9,6 +9,9 @@ import socket
 def get_node_id() -> int:
     return int(os.getenv("AUTO_RL_NODE_ID", "-1"))
 
+def get_group_rank() -> int:
+    return int(os.getenv("AUTO_RL_GROUP_RANK", "-1"))
+
 
 def get_node_type() -> str:
     return os.getenv("AUTO_RL_NODE_TYPE", "TRAIN_NODE")

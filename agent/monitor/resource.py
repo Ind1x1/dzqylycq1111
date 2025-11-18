@@ -4,7 +4,7 @@ import time
 
 import psutil
 
-from common.comm import GPUstats
+from common.comm import GPUStats
 
 from common.constants import NodeEnv, NodeType, AcceleratorType
 from common.log import default_logger as logger
@@ -101,7 +101,7 @@ class ResourceMonitor(Singleton):
         try:
             thread = threading.Thread(
                 target = self._monitor_resource,
-                name = "ResourceMonitor-thread"
+                name = "ResourceMonitor-thread",
                 daemon = True
             )
             thread.start()

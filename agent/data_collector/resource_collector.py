@@ -7,11 +7,14 @@ class ResourceCollector(DataCollector):
     ResourceCollector collects the resource usage of the node.
     """
 
-    def __init__(self):
+    def __init__(self, monitor: Optional[ResourceMonitor] = None):
         super().__init__()
-        self._monitor = ResourceMonitor().singleton_instance()
+        if monitor is not None:
+            self._monitor = monitor
+        else:
+            self._monitor = ResourceMonitor.singleton_instance()
         self._collector_type = CollectorType.RESOURCE_COLLECTOR
-        
+
     def collect_data(self) -> object:
         # Get ResourceData object from monitor (may be running in subprocess)
         resource_data = self._monitor.report_resource()
