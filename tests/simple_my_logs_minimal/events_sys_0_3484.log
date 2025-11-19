@@ -1,0 +1,3 @@
+[2025-11-13 14:20:24,713] [INFO] EventExporter initialized: file_dir=./simple_my_logs_minimal
+[2025-11-13 14:20:24,714] [INFO] ErrorHandler registered
+[2025-11-13 14:20:24,715] [INFO] EventExporter closed

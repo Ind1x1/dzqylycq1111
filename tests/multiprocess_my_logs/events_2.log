@@ -1,0 +1,1 @@
+[2025-11-13T15:05:28.202894] [33740] [e063a743] [ErrorReporter] [exception] [INSTANT] {"stack": ["Traceback (most recent call last):\n", "  File \"D:\\dlrover\\stack\\multiprocess_error_tracking.py\", line 51, in worker_function\n    result = 10 / 0\n", "ZeroDivisionError: division by zero\n"], "pid": 33740}

@@ -1,0 +1,1 @@
+[2025-11-13T15:05:27.974436] [3152] [e798dff7] [ErrorReporter] [exception] [INSTANT] {"stack": ["Traceback (most recent call last):\n", "  File \"D:\\dlrover\\stack\\multiprocess_error_tracking.py\", line 40, in worker_function\n    raise ValueError(\n", "ValueError: ValueError from rank 0!\n  Invalid parameter detected in worker 0\n"], "pid": 3152}

@@ -1,0 +1,1 @@
+[2025-11-13T15:05:28.098795] [36980] [b1d56700] [ErrorReporter] [exception] [INSTANT] {"stack": ["Traceback (most recent call last):\n", "  File \"D:\\dlrover\\stack\\multiprocess_error_tracking.py\", line 45, in worker_function\n    raise RuntimeError(\n", "RuntimeError: RuntimeError from rank 1!\n  Runtime error occurred in worker 1\n"], "pid": 36980}
