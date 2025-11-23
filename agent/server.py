@@ -107,7 +107,7 @@ class HttpControllerServicer(ControllerServicer):
             return BaseResponse(success=False)
         
         try:
-            state = collector.report_state()
+            state = collector.collect_data()
             if state is None:
                 logger.warning(f"Collector '{collector_type}' returned None state.")
                 return BaseResponse(success=False)
@@ -117,59 +117,6 @@ class HttpControllerServicer(ControllerServicer):
             return BaseResponse(success=True, data=state_data)
         except Exception as exc:
             logger.error(f"Failed to collect state from {collector_type} collector: {exc}")
-            return BaseResponse(success=False)
-    
-    def consume_queue_data(self, request: BaseRequest) -> BaseResponse:
-        """
-        Consume data from collector's message queue.
-        
-        Client sends a request specifying which collector's queue to consume from.
-        This method consumes (gets and removes) the latest data from the queue.
-        
-        Args:
-            request: BaseRequest containing CollectorRequest in data field with collector_type
-            
-        Returns:
-            BaseResponse with consumed data, or error if collector not found/queue is empty
-        """
-        try:
-            if not request.data:
-                logger.error("CollectorRequest data is empty.")
-                return BaseResponse(success=False)
-            
-            collector_request = pickle.loads(request.data)
-            if not isinstance(collector_request, CollectorRequest):
-                logger.error(f"Invalid CollectorRequest type: {type(collector_request)}")
-                return BaseResponse(success=False)
-            
-            # collector_type is guaranteed to be CollectorType value (e.g., "LOG_COLLECTOR")
-            collector_type = collector_request.collector_type
-        except Exception as exc:
-            logger.error(f"Failed to deserialize CollectorRequest: {exc}")
-            return BaseResponse(success=False)
-        
-        collector = self._collectors.get(collector_type)
-        if collector is None:
-            logger.warning(f"Collector for collector_type '{collector_type}' is not configured.")
-            return BaseResponse(success=False)
-        
-        try:
-            # Check if collector has consume_data method (DataCollector instance)
-            if not hasattr(collector, 'consume_data'):
-                logger.warning(f"Collector '{collector_type}' does not support queue consumption.")
-                return BaseResponse(success=False)
-            
-            # Consume data from queue (removes latest item)
-            data = collector.consume_data()
-            if data is None:
-                logger.info(f"Queue for collector '{collector_type}' is empty.")
-                return BaseResponse(success=False)
-            
-            data_bytes = pickle.dumps(data)
-            logger.info(f"[HttpControllerServicer] Consumed data from {collector_type} queue successfully")
-            return BaseResponse(success=True, data=data_bytes)
-        except Exception as exc:
-            logger.error(f"Failed to consume data from {collector_type} collector: {exc}")
             return BaseResponse(success=False)
 
 
@@ -198,10 +145,6 @@ class HttpControllerHandler(tornado.web.RequestHandler):
             elif path == "/get_state":
                 # Get state from collector
                 response = self._servicer.get_state(request)
-                self.write(response.serialize())
-            elif path == "/consume_queue":
-                # Consume data from collector's message queue
-                response = self._servicer.consume_queue_data(request)
                 self.write(response.serialize())
             elif path == "/report":
                 # Report data to servicer
@@ -241,7 +184,6 @@ def create_http_controller_handler(
             (r"/", HttpControllerHandler, dict(servicer=controller_servicer)),
             (r"/check", HttpControllerHandler, dict(servicer=controller_servicer)),
             (r"/get_state", HttpControllerHandler, dict(servicer=controller_servicer)),
-            (r"/consume_queue", HttpControllerHandler, dict(servicer=controller_servicer)),
             (r"/report", HttpControllerHandler, dict(servicer=controller_servicer)),
         ],
     )

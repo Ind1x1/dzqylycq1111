@@ -23,30 +23,21 @@ class DummyCollector(DataCollector):
     """返回固定结果的 Collector，便于测试。"""
 
     def __init__(self, name: str, payload: object):
-        super().__init__(queue_size=10)
+        super().__init__()
         self._name = name
         self._payload = payload
 
     def collect_data(self):
-        # 收集数据并自动存储到队列
+        # 每次请求时直接采集并返回数据
         data = {
             "collector": self._name,
             "payload": self._payload,
             "timestamp": time.time(),
         }
-        self.store_data(data)
         return data
 
     def is_enabled(self) -> bool:
         return True
-
-    def report_state(self):
-        """用于 get_state 端点，返回当前状态"""
-        return {
-            "collector": self._name,
-            "payload": self._payload,
-            "timestamp": time.time(),
-        }
 
 
 def _start_server(state_type: str, payload: object):
@@ -65,8 +56,8 @@ def _start_server(state_type: str, payload: object):
     return server, servicer, port
 
 
-def _consume_queue(port: int, collector_type: CollectorType):
-    """从指定端口的服务器消费队列数据"""
+def _get_state(port: int, collector_type: CollectorType):
+    """从指定端口的服务器获取状态（直接采集数据）"""
     collector_request = CollectorRequest(collector_type=collector_type, node_id=0)
     request = BaseRequest(
         node_id=0,
@@ -75,7 +66,7 @@ def _consume_queue(port: int, collector_type: CollectorType):
     
     try:
         response = requests.post(
-            f"http://127.0.0.1:{port}/consume_queue",
+            f"http://127.0.0.1:{port}/get_state",
             json=request.to_json(),
             timeout=5,
         )
@@ -93,7 +84,7 @@ def _consume_queue(port: int, collector_type: CollectorType):
             return pickle.loads(response_data.data)
         return None
     except Exception as e:
-        print(f"Error consuming queue: {e}")
+        print(f"Error getting state: {e}")
         return None
 
 
@@ -133,20 +124,10 @@ def test_httpsc_end_to_end():
         server_metric.start()
         time.sleep(0.2)
 
-        # 测试 1: 通过 collector 收集数据（自动存储到队列）
-        collector_log = servicer_log._collectors.get(CollectorType.LOG_COLLECTOR)
-        collector_log.collect_data()
-        collector_log.collect_data()  # 收集两次，测试队列
+        # 测试 1: 通过 HTTP get_state 端点直接采集数据
+        # 每次请求都会触发一次新的数据采集
         
-        collector_resource = servicer_usage._collectors.get(CollectorType.RESOURCE_COLLECTOR)
-        collector_resource.collect_data()
-        collector_resource.collect_data()  # 收集两次，测试队列
-        
-        # 测试 metric collector - 需要确保时间戳差异大于15秒
-        collector_metric = servicer_metric._collectors.get(CollectorType.METRIC_COLLECTOR)
-        
-        # 第一次收集：写入第一个指标
-        # 注意：_last_timestamp 初始为 0，所以第一次需要 timestamp > 15
+        # 准备 metric 数据 - 第一次收集
         metrics_data_1 = {
             "step": 100,
             "timestamp": base_timestamp,  # base_timestamp 是当前时间戳，肯定 > 15
@@ -156,10 +137,30 @@ def test_httpsc_end_to_end():
         }
         with open(metrics_file, "w") as f:
             json.dump(metrics_data_1, f)
-        result1 = collector_metric.collect_data()
-        print(f"[Test] First metric collection result: {result1 is not None}")
         
-        # 等待一下，然后写入第二个指标（时间戳差异大于15秒）
+        # 通过 HTTP 获取状态（直接采集）
+        log_data_1 = _get_state(port_log, CollectorType.LOG_COLLECTOR)
+        resource_data_1 = _get_state(port_usage, CollectorType.RESOURCE_COLLECTOR)
+        metric_data_1 = _get_state(port_metric, CollectorType.METRIC_COLLECTOR)
+        
+        print("[Test] 第一次获取 log 数据:", log_data_1)
+        print("[Test] 第一次获取 resource 数据:", resource_data_1)
+        print("[Test] 第一次获取 metric 数据:", metric_data_1)
+        
+        # 验证第一次采集
+        assert log_data_1 is not None, "Log collector should return data"
+        assert resource_data_1 is not None, "Resource collector should return data"
+        assert metric_data_1 is not None, "Metric collector should return data"
+        
+        # 验证 metric 数据内容
+        if metric_data_1:
+            print(f"[Test] Metric data content: {metric_data_1.data_content}")
+            metric_dict = json.loads(metric_data_1.data_content)
+            assert "step" in metric_dict, "Metric should contain 'step'"
+            assert "timestamp" in metric_dict, "Metric should contain 'timestamp'"
+            assert metric_dict["step"] == 100, "First metric should have step 100"
+        
+        # 等待一下，然后更新 metric 数据并再次采集
         time.sleep(0.1)
         metrics_data_2 = {
             "step": 200,
@@ -170,48 +171,27 @@ def test_httpsc_end_to_end():
         }
         with open(metrics_file, "w") as f:
             json.dump(metrics_data_2, f)
-        result2 = collector_metric.collect_data()
-        print(f"[Test] Second metric collection result: {result2 is not None}")
         
-        # 测试 2: 通过 HTTP 消费队列数据
-        log_data_1 = _consume_queue(port_log, CollectorType.LOG_COLLECTOR)
-        log_data_2 = _consume_queue(port_log, CollectorType.LOG_COLLECTOR)
-        resource_data_1 = _consume_queue(port_usage, CollectorType.RESOURCE_COLLECTOR)
-        resource_data_2 = _consume_queue(port_usage, CollectorType.RESOURCE_COLLECTOR)
-        metric_data_1 = _consume_queue(port_metric, CollectorType.METRIC_COLLECTOR)
-        metric_data_2 = _consume_queue(port_metric, CollectorType.METRIC_COLLECTOR)
+        # 第二次通过 HTTP 获取状态（应该采集到新的数据）
+        log_data_2 = _get_state(port_log, CollectorType.LOG_COLLECTOR)
+        resource_data_2 = _get_state(port_usage, CollectorType.RESOURCE_COLLECTOR)
+        metric_data_2 = _get_state(port_metric, CollectorType.METRIC_COLLECTOR)
         
-        print("[Test] 从队列消费 log 数据 1:", log_data_1)
-        print("[Test] 从队列消费 log 数据 2:", log_data_2)
-        print("[Test] 从队列消费 resource 数据 1:", resource_data_1)
-        print("[Test] 从队列消费 resource 数据 2:", resource_data_2)
-        print("[Test] 从队列消费 metric 数据 1:", metric_data_1)
-        print("[Test] 从队列消费 metric 数据 2:", metric_data_2)
+        print("[Test] 第二次获取 log 数据:", log_data_2)
+        print("[Test] 第二次获取 resource 数据:", resource_data_2)
+        print("[Test] 第二次获取 metric 数据:", metric_data_2)
         
-        # 验证队列功能
-        assert log_data_1 is not None, "Log queue should have data (first consume)"
-        assert log_data_2 is not None, "Log queue should have data (second consume)"
-        assert resource_data_1 is not None, "Resource queue should have data (first consume)"
-        assert resource_data_2 is not None, "Resource queue should have data (second consume)"
-        assert metric_data_1 is not None, "Metric queue should have data (first consume)"
-        assert metric_data_2 is not None, "Metric queue should have data (second consume)"
+        # 验证第二次采集
+        assert log_data_2 is not None, "Log collector should return data on second request"
+        assert resource_data_2 is not None, "Resource collector should return data on second request"
+        assert metric_data_2 is not None, "Metric collector should return data on second request"
         
-        # 验证 metric 数据内容
-        if metric_data_1:
-            print(f"[Test] Metric data content: {metric_data_1.data_content}")
-            metric_dict = json.loads(metric_data_1.data_content)
-            assert "step" in metric_dict, "Metric should contain 'step'"
-            assert "timestamp" in metric_dict, "Metric should contain 'timestamp'"
+        # 验证 metric 数据已更新
+        if metric_data_2:
+            metric_dict_2 = json.loads(metric_data_2.data_content)
+            assert metric_dict_2["step"] == 200, "Second metric should have step 200"
         
-        # 验证消费后队列为空
-        log_data_3 = _consume_queue(port_log, CollectorType.LOG_COLLECTOR)
-        resource_data_3 = _consume_queue(port_usage, CollectorType.RESOURCE_COLLECTOR)
-        metric_data_3 = _consume_queue(port_metric, CollectorType.METRIC_COLLECTOR)
-        assert log_data_3 is None, "Log queue should be empty after consuming all data"
-        assert resource_data_3 is None, "Resource queue should be empty after consuming all data"
-        assert metric_data_3 is None, "Metric queue should be empty after consuming all data"
-        
-        print("[Test] 队列消费测试通过!")
+        print("[Test] 直接采集测试通过!")
         
     finally:
         server_log.stop()

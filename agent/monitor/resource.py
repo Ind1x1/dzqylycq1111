@@ -130,8 +130,8 @@ class ResourceMonitor(Singleton):
             f"Reported resource usage for {self._node_type}: used_mem={used_mem}, current_cpu={current_cpu}, gpu_stats={self._gpu_stats}"
         )
         
-        # Create and return ResourceData object for ResourceCollector to store in message queue
-        # Client can consume data via HTTP server /consume_queue endpoint
+        # Create and return ResourceData object for ResourceCollector
+        # Client can get data via HTTP server /get_state endpoint
         resource_data = ResourceData(
             used_memory_mb=used_mem,
             cpu_percent=cpu_percent,

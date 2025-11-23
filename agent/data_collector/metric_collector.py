@@ -29,11 +29,7 @@ class MetricCollector(DataCollector):
         
     def collect_data(self) -> object:
         # Use report_step() to get training metrics
-        metric_data = self._monitor.report_step()
-        # Store collected metric data in queue
-        if metric_data:
-            self.store_data(metric_data)
-        
+        metric_data = self._monitor.report_step()   
         return metric_data
 
     def is_enabled(self) -> bool:
