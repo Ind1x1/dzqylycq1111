@@ -1,0 +1,3 @@
+[2025-11-13 15:05:27,972] [INFO] EventExporter initialized: file_dir=./multiprocess_my_logs
+[2025-11-13 15:05:27,973] [INFO] ErrorHandler registered
+[2025-11-13 15:05:27,977] [INFO] EventExporter closed

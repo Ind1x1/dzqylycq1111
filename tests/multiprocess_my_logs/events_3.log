@@ -1,0 +1,1 @@
+[2025-11-13T15:05:28.312443] [13720] [5e70becc] [ErrorReporter] [exception] [INSTANT] {"stack": ["Traceback (most recent call last):\n", "  File \"D:\\dlrover\\stack\\multiprocess_error_tracking.py\", line 53, in worker_function\n    raise TypeError(\n", "TypeError: TypeError from rank 3!\n  Type mismatch in worker 3\n"], "pid": 13720}
