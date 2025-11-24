@@ -12,6 +12,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from agent.data_collector.data_collector import DataCollector
 from agent.data_collector.constants import CollectedNodeType
 from agent.data_collector.metric_collector import MetricCollector
+from agent.data_collector.stack_collector import StackTraceCollector
 from agent.monitor.training import RLHFTrainingMonitor
 from agent.server import create_http_controller_handler
 from common import comm
@@ -123,6 +124,21 @@ def test_httpsc_end_to_end():
         )
         server_metric.start()
         time.sleep(0.2)
+        
+        # 创建 StackTraceCollector
+        log_dir = Path(__file__).parent / "simple_my_logs_minimal"
+        stack_collector = StackTraceCollector(log_dir=str(log_dir), n_line=100, rank=0)
+        port_stack = find_free_port()
+        collectors_stack = {
+            CollectorType.STACK_TRACE_COLLECTOR: stack_collector,
+        }
+        server_stack, servicer_stack = create_http_controller_handler(
+            host="127.0.0.1",
+            port=port_stack,
+            collectors=collectors_stack,
+        )
+        server_stack.start()
+        time.sleep(0.2)
 
         # 测试 1: 通过 HTTP get_state 端点直接采集数据
         # 每次请求都会触发一次新的数据采集
@@ -142,15 +158,18 @@ def test_httpsc_end_to_end():
         log_data_1 = _get_state(port_log, CollectorType.LOG_COLLECTOR)
         resource_data_1 = _get_state(port_usage, CollectorType.RESOURCE_COLLECTOR)
         metric_data_1 = _get_state(port_metric, CollectorType.METRIC_COLLECTOR)
+        stack_data_1 = _get_state(port_stack, CollectorType.STACK_TRACE_COLLECTOR)
         
         print("[Test] 第一次获取 log 数据:", log_data_1)
         print("[Test] 第一次获取 resource 数据:", resource_data_1)
         print("[Test] 第一次获取 metric 数据:", metric_data_1)
+        print("[Test] 第一次获取 stack 数据:", stack_data_1)
         
         # 验证第一次采集
         assert log_data_1 is not None, "Log collector should return data"
         assert resource_data_1 is not None, "Resource collector should return data"
         assert metric_data_1 is not None, "Metric collector should return data"
+        assert stack_data_1 is not None, "Stack collector should return data"
         
         # 验证 metric 数据内容
         if metric_data_1:
@@ -159,6 +178,15 @@ def test_httpsc_end_to_end():
             assert "step" in metric_dict, "Metric should contain 'step'"
             assert "timestamp" in metric_dict, "Metric should contain 'timestamp'"
             assert metric_dict["step"] == 100, "First metric should have step 100"
+        
+        # 验证 stack trace 数据内容
+        if stack_data_1:
+            print(f"[Test] Stack data: has_exception={stack_data_1.has_exception()}, "
+                  f"exception_type={stack_data_1.exception_type}, pid={stack_data_1.pid}")
+            assert stack_data_1.has_exception(), "Stack should contain exception"
+            assert stack_data_1.exception_type == "ValueError", f"Exception type should be ValueError, got {stack_data_1.exception_type}"
+            assert stack_data_1.pid == 3484, f"PID should be 3484, got {stack_data_1.pid}"
+            assert len(stack_data_1.stack_traces) > 0, "Stack traces should not be empty"
         
         # 等待一下，然后更新 metric 数据并再次采集
         time.sleep(0.1)
@@ -176,15 +204,18 @@ def test_httpsc_end_to_end():
         log_data_2 = _get_state(port_log, CollectorType.LOG_COLLECTOR)
         resource_data_2 = _get_state(port_usage, CollectorType.RESOURCE_COLLECTOR)
         metric_data_2 = _get_state(port_metric, CollectorType.METRIC_COLLECTOR)
+        stack_data_2 = _get_state(port_stack, CollectorType.STACK_TRACE_COLLECTOR)
         
         print("[Test] 第二次获取 log 数据:", log_data_2)
         print("[Test] 第二次获取 resource 数据:", resource_data_2)
         print("[Test] 第二次获取 metric 数据:", metric_data_2)
+        print("[Test] 第二次获取 stack 数据:", stack_data_2)
         
         # 验证第二次采集
         assert log_data_2 is not None, "Log collector should return data on second request"
         assert resource_data_2 is not None, "Resource collector should return data on second request"
         assert metric_data_2 is not None, "Metric collector should return data on second request"
+        assert stack_data_2 is not None, "Stack collector should return data on second request"
         
         # 验证 metric 数据已更新
         if metric_data_2:
@@ -197,6 +228,7 @@ def test_httpsc_end_to_end():
         server_log.stop()
         server_usage.stop()
         server_metric.stop()
+        server_stack.stop()
         # 清理测试文件
         if metrics_file.exists():
             os.remove(metrics_file)

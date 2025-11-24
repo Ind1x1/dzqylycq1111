@@ -246,3 +246,71 @@ class ResourceData(CollectedData):
             node_type=node_type,
             **kwargs
         )
+
+class StackTraceData(CollectedData):
+    """
+    Worker's stack trace data.
+    
+    Args:
+        timestamp (datetime): Timestamp of diagnosis data.
+        stack_traces (list): List of stack trace strings.
+        exception_type (str): Type of the exception if any.
+        event_name (str): Event name (e.g., 'exception', 'exit_sig').
+        pid (int): Process ID that generated the stack trace.
+        node_id (int): Node ID. Defaults to -1.
+        node_type (str): Node type. Defaults to "".
+        node_rank (int): Node rank. Defaults to -1.
+    """
+
+    def __init__(
+        self,
+        timestamp: int = 0,
+        stack_traces: Optional[List[str]] = None,
+        exception_type: str = "",
+        event_name: str = "",
+        pid: int = 0,
+        node_id=env_utils.get_node_id(),
+        node_type=env_utils.get_node_type(),
+        node_rank=env_utils.get_node_rank(),
+    ):
+        if stack_traces is None:
+            data_content = ""
+        else:
+            data_content = "\n".join(stack_traces)
+
+        super().__init__(
+            timestamp,
+            CollectedDataType.STACK_TRACE,
+            data_content,
+            node_id,
+            node_type,
+            node_rank,
+        )
+        self._stack_traces = stack_traces or []
+        self._exception_type = exception_type
+        self._event_name = event_name
+        self._pid = pid
+
+    @property
+    def stack_traces(self) -> List[str]:
+        """获取堆栈追踪列表"""
+        return self._stack_traces
+
+    @property
+    def exception_type(self) -> str:
+        """获取异常类型"""
+        return self._exception_type
+
+    @property
+    def event_name(self) -> str:
+        """获取事件名称"""
+        return self._event_name
+
+    @property
+    def pid(self) -> int:
+        """获取进程ID"""
+        return self._pid
+
+    def has_exception(self) -> bool:
+        """是否包含异常信息"""
+        return bool(self._stack_traces) and self._event_name == "exception"
