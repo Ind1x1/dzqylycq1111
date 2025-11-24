@@ -5,6 +5,7 @@ from typing import List
 
 from agent.data_collector.collected_data import TrainingLog
 from agent.data_collector.data_collector import DataCollector
+from common.constants import CollectorType
 from util.file_util import read_last_n_lines
 
 
@@ -22,8 +23,6 @@ class TrainingLogCollector(DataCollector):
     def collect_data(self) -> TrainingLog:
         if not self._log_file or not self._log_file.exists():
             training_log = TrainingLog()
-            # Store empty log in message queue
-            self.store_data(training_log)
             return training_log
 
         raw_logs = read_last_n_lines(str(self._log_file), self._n_line)
@@ -43,8 +42,6 @@ class TrainingLogCollector(DataCollector):
                     break
 
         training_log = TrainingLog(logs=logs)
-        # Store collected log in message queue
-        self.store_data(training_log)
         return training_log
 
     def is_enabled(self) -> bool:

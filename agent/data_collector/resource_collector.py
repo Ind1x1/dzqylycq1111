@@ -1,6 +1,9 @@
+from typing import Optional
+
 from agent.data_collector.data_collector import DataCollector
 from agent.data_collector.collected_data import ResourceData
 from agent.monitor.resource import ResourceMonitor
+from common.constants import CollectorType
 
 class ResourceCollector(DataCollector):
     """
@@ -17,12 +20,7 @@ class ResourceCollector(DataCollector):
 
     def collect_data(self) -> object:
         # Get ResourceData object from monitor (may be running in subprocess)
-        resource_data = self._monitor.report_resource()
-        
-        # Store collected resource data in queue
-        if resource_data:
-            self.store_data(resource_data)
-        
+        resource_data = self._monitor.report_resource()     
         return resource_data
 
     def is_enabled(self) -> bool:
