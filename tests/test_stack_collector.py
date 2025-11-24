@@ -22,7 +22,7 @@ def test_single_process_logs():
     print("测试 1: 单进程场景 (simple_my_logs_minimal)")
     print("="*70)
     
-    log_dir = os.path.join(project_root, "stack", "simple_my_logs_minimal")
+    log_dir = os.path.join(project_root, "tests", "simple_my_logs_minimal")
     print(f"日志目录: {log_dir}")
     
     # 创建收集器
@@ -61,7 +61,7 @@ def test_multiprocess_logs():
     print("测试 2: 多进程场景 (multiprocess_my_logs)")
     print("="*70)
     
-    log_dir = os.path.join(project_root, "stack", "multiprocess_my_logs")
+    log_dir = os.path.join(project_root, "tests", "multiprocess_my_logs")
     print(f"日志目录: {log_dir}")
     
     # 创建收集器
@@ -133,7 +133,7 @@ def test_single_rank_collection():
     print("测试 3: 收集指定 Rank (multiprocess_my_logs, rank=2)")
     print("="*70)
     
-    log_dir = os.path.join(project_root, "stack", "multiprocess_my_logs")
+    log_dir = os.path.join(project_root, "tests", "multiprocess_my_logs")
     
     # 测试收集 rank 2 的数据
     collector = StackTraceCollector(log_dir=log_dir, n_line=100, rank=2)

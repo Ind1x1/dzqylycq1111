@@ -76,7 +76,6 @@ class StackTraceCollector(DataCollector):
         """
         if not self._log_dir or not self._log_dir.exists():
             stack_data = StackTraceData()
-            self.store_data(stack_data)
             return stack_data
         
         # 查找当前 rank 的日志文件
@@ -84,7 +83,6 @@ class StackTraceCollector(DataCollector):
         
         if not log_file.exists():
             stack_data = StackTraceData()
-            self.store_data(stack_data)
             return stack_data
         
         # 读取最后 n 行日志
@@ -145,8 +143,6 @@ class StackTraceCollector(DataCollector):
             pid=pid,
         )
         
-        # 存储到队列
-        self.store_data(stack_data)
         return stack_data
 
     def _parse_log_line(self, line: str):
