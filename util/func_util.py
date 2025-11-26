@@ -38,3 +38,36 @@ def retry(retry_times=10, retry_interval=5, raise_exception=True):
         return wrapper
     return decorator
 
+class TimeoutException(Exception):
+    pass
+
+
+def threading_timeout(secs=-1, callback_func=None):
+    """
+    Decorator for timeout that limits the execution
+    time of functions executed in main and non-main threads
+    :param secs: timeout seconds
+    :param callback_func: the function that set the timeout
+    """
+    if callback_func is None:
+        if secs <= 0:
+            timeout_secs_value = TIMEOUT_MAX
+        else:
+            timeout_secs_value = secs
+    else:
+        timeout_secs_value = callback_func()
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            with futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(func, *args, **kwargs)
+                try:
+                    result = future.result(timeout=timeout_secs_value)
+                except futures.TimeoutError:
+                    raise TimeoutException("Function call timed out")
+                return result
+
+        return wrapped
+
+    return decorator
