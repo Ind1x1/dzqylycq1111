@@ -1,0 +1,11 @@
+2025-11-07 15:56:29,942	INFO signal_handler.py:142 -- 3725 -- Installing collected signal handlers in main thread
+2025-11-07 15:56:29,942	INFO signal_handler.py:79 -- 3725 -- Signal dispatcher installed in main thread
+2025-11-07 15:56:29,942	INFO engine_server.py:531 -- 3725 -- [EngineServer] Engine server running with role: training
+2025-11-07 15:56:31,281	WARNING __init__.py:81 -- 3725 -- Skipping import of cpp extensions
+2025-11-07 15:56:49,088	INFO real_accelerator.py:222 -- Setting ds_accelerator to cuda (auto detect)
+2025-11-07 15:56:49,631	INFO config.py:59 -- PyTorch version 2.6.0+cu126 available.
+2025-11-07 15:56:50,123	ERROR initialization.py:156 -- FrameworkError: RewardError occurred during startup
+2025-11-07 15:56:52,139	INFO engine_server.py:486 -- [EngineServer] Engine HTTP server started
+2025-11-07 15:56:52,139	INFO engine_server.py:474 -- [EngineServer] Heartbeat log - Server is running
+2025-11-07 15:57:52,200	INFO engine_server.py:474 -- [EngineServer] Heartbeat log - Server is running
+

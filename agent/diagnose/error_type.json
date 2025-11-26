@@ -1,0 +1,97 @@
+[
+  {
+    "error_type": "TrainEngineError",
+    "sub_error": "InitializeError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "TrainEngineError",
+    "sub_error": "UpdateWorkerError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "TrainEngineError",
+    "sub_error": "SaveError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "TrainEngineError",
+    "sub_error": "TrainError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "TrainEngineError",
+    "sub_error": "RecomputeLogpError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "InferenceEngineError",
+    "sub_error": "InitializeError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "InferenceEngineError",
+    "sub_error": "UpdateWeightError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "InferenceEngineError",
+    "sub_error": "RolloutError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "RefEngineError",
+    "sub_error": "InitializeError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "RefEngineError",
+    "sub_error": "UpdateWeightError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "RefEngineError",
+    "sub_error": "ComputeLogpError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "FrameworkError",
+    "sub_error": "DataLoaderError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "RefEngineError",
+    "sub_error": "WandbError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "FrameworkError",
+    "sub_error": "SchedulerError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "FrameworkError",
+    "sub_error": "DistributedBatchMemoryError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "FrameworkError",
+    "sub_error": "RewardError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "FrameworkError",
+    "sub_error": "RecoverError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "FrameworkError",
+    "sub_error": "InferenceWorkerRolloutError",
+    "reason": "Request Timeout"
+  },
+  {
+    "error_type": "FrameworkError",
+    "sub_error": "TrainWorkerRolloutError",
+    "reason": "Request Timeout"
+  }
+]

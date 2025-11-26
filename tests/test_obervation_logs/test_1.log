@@ -1,0 +1,40 @@
+DEBUG   [U=0,P=3380]       apply_privileges()            Effective capabilities:   0x0000003fffffffff
+DEBUG   [U=0,P=3380]       apply_privileges()            Permitted capabilities:   0x0000003fffffffff
+DEBUG   [U=0,P=3380]       apply_privileges()            Bounding capabilities:    0x0000003fffffffff
+DEBUG   [U=0,P=3380]       apply_privileges()            Inheritable capabilities: 0x0000003fffffffff
+DEBUG   [U=0,P=3380]       apply_privileges()            Ambient capabilities:     0x0000003fffffffff
+DEBUG   [U=0,P=3380]       apply_privileges()            Set user ID to 0
+DEBUG   [U=0,P=3380]       set_parent_death_signal()     Set parent death signal to 9
+DEBUG   [U=0,P=3380]       startup()                     singularity runtime engine selected
+VERBOSE [U=0,P=3380]       startup()                     Execute stage 2
+DEBUG   [U=0,P=3380]       StageTwo()                    Entering stage 2
+DEBUG   [U=0,P=3380]       StartProcess()                Setting umask in container to 0027
+DEBUG   [U=0,P=3380]       sylogBuiltin()                Sourcing /.singularity.d/env/01-base.sh
+DEBUG   [U=0,P=3380]       sylogBuiltin()                Sourcing /.singularity.d/env/10-docker2singularity.sh
+source: /.singularity.d/env/10-docker2singularity.sh:5:8: invalid var name
+DEBUG   [U=0,P=3380]       sylogBuiltin()                Sourcing /.singularity.d/env/90-environment.sh
+DEBUG   [U=0,P=3380]       sylogBuiltin()                Sourcing /.singularity.d/env/94-appsbase.sh
+DEBUG   [U=0,P=3380]       sylogBuiltin()                Sourcing /.singularity.d/env/95-apps.sh
+DEBUG   [U=0,P=3380]       sylogBuiltin()                Sourcing /.singularity.d/env/99-base.sh
+DEBUG   [U=0,P=3380]       sylogBuiltin()                Sourcing /.singularity.d/env/99-runtimevars.sh
+DEBUG   [U=0,P=3380]       sylogBuiltin()                Running action command exec
+DEBUG   [U=0,P=3304]       PostStartProcess()            Post start process
+2025-11-07 15:56:29,942INFO signal_handler.py:142 -- 3496 -- Installing collected signal handlers in main thread
+2025-11-07 15:56:29,942INFO signal_handler.py:79 -- 3496 -- Signal dispatcher installed in main thread for signals: [<Signals.SIGINT: 2>, <Signals.SIGTERM: 15>, <Signals.SIGCHLD: 17>, <Signals.SIGQUIT: 3>]
+2025-11-07 15:56:29,943INFO engine_server.py:531 -- 3496 -- [EngineServer] Engine server running with role: training, port: 30034,30035
+2025-11-07 15:56:29,943INFO engine_server.py:501 -- 3496 -- [EngineServer] engine server start host , port 30034, engine_type training
+2025-11-07 15:56:31,281WARNING __init__.py:81 -- 3496 -- Skipping import of cpp extensions due to incompatible torch version 2.6.0+cu126 for torchao version 0.14.0         Please see GitHub issue #2919 for more info
+/home/admin/Megatron-LM/megatron/core/transformer/cuda_graphs.py:741: SyntaxWarning: assertion is always true, perhaps remove parentheses?
+  assert (
+FusedRoPEFunc: from transformer_engine.pytorch.attention.rope import FusedRoPEFunc
+FusedRoPEFunc signature is t,freqs,start_positions,tensor_format,interleaved,cu_seqlens,cp_size,cp_rank
+[2025-11-07 15:56:49,096] [INFO] [real_accelerator.py:222:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+df: /root/.triton/autotune: No such file or directory
+2025-11-07 15:56:49,631INFO config.py:59 -- 3496 -- PyTorch version 2.6.0+cu126 available.
+/opt/conda/lib/python3.10/site-packages/modelopt/torch/utils/import_utils.py:32: UserWarning: Failed to import megatron plugin due to: ImportError("cannot import name 'get_tensor_model_parallel_group_if_none' from 'megatron.core.utils' (/home/admin/Megatron-LM/megatron/core/utils.py)"). You may ignore this warning if you do not need this plugin.
+  warnings.warn(
+/opt/conda/lib/python3.10/site-packages/modelopt/torch/speculative/plugins/megatron_eagle.py:68: UserWarning: Fail to import megatron.core.post_training! EAGLE feature will be disable!
+  warnings.warn("Fail to import megatron.core.post_training! EAGLE feature will be disable!")
+2025-11-07 15:56:52,139INFO engine_server.py:486 -- 3496 -- [EngineServer] Engine HTTP server started at http://10.10.12.120:30034
+2025-11-07 15:56:52,139INFO engine_server.py:474 -- 3496 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30034, type training
+2025-11-07 15:57:52,199INFO engine_server.py:474 -- 3496 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30034, type training

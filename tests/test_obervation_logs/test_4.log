@@ -1,0 +1,36 @@
+source: /.singularity.d/env/10-docker2singularity.sh:5:8: invalid var name
+DEBUG   [U=0,P=3663]       sylogBuiltin()                Sourcing /.singularity.d/env/90-environment.sh
+DEBUG   [U=0,P=3663]       sylogBuiltin()                Sourcing /.singularity.d/env/94-appsbase.sh
+DEBUG   [U=0,P=3663]       sylogBuiltin()                Sourcing /.singularity.d/env/95-apps.sh
+DEBUG   [U=0,P=3663]       sylogBuiltin()                Sourcing /.singularity.d/env/99-base.sh
+DEBUG   [U=0,P=3663]       sylogBuiltin()                Sourcing /.singularity.d/env/99-runtimevars.sh
+DEBUG   [U=0,P=3663]       sylogBuiltin()                Running action command exec
+DEBUG   [U=0,P=3543]       PostStartProcess()            Post start process
+2025-11-07 15:56:29,942	INFO signal_handler.py:142 -- 3725 -- Installing collected signal handlers in main thread
+2025-11-07 15:56:29,942	INFO signal_handler.py:79 -- 3725 -- Signal dispatcher installed in main thread for signals: [<Signals.SIGINT: 2>, <Signals.SIGTERM: 15>, <Signals.SIGCHLD: 17>, <Signals.SIGQUIT: 3>]
+2025-11-07 15:56:29,942	INFO engine_server.py:531 -- 3725 -- [EngineServer] Engine server running with role: training, port: 30018,30019
+2025-11-07 15:56:29,943	INFO engine_server.py:501 -- 3725 -- [EngineServer] engine server start host , port 30018, engine_type training
+2025-11-07 15:56:31,281	WARNING __init__.py:81 -- 3725 -- Skipping import of cpp extensions due to incompatible torch version 2.6.0+cu126 for torchao version 0.14.0         Please see GitHub issue #2919 for more info
+/home/admin/Megatron-LM/megatron/core/transformer/cuda_graphs.py:741: SyntaxWarning: assertion is always true, perhaps remove parentheses?
+  assert (
+FusedRoPEFunc: from transformer_engine.pytorch.attention.rope import FusedRoPEFunc
+FusedRoPEFunc signature is t,freqs,start_positions,tensor_format,interleaved,cu_seqlens,cp_size,cp_rank
+[2025-11-07 15:56:49,088] [INFO] [real_accelerator.py:222:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+df: /root/.triton/autotune: No such file or directory
+2025-11-07 15:56:49,631	INFO config.py:59 -- 3725 -- PyTorch version 2.6.0+cu126 available.
+/opt/conda/lib/python3.10/site-packages/modelopt/torch/utils/import_utils.py:32: UserWarning: Failed to import megatron plugin due to: ImportError("cannot import name 'get_tensor_model_parallel_group_if_none' from 'megatron.core.utils' (/home/admin/Megatron-LM/megatron/core/utils.py)"). You may ignore this warning if you do not need this plugin.
+  warnings.warn(
+/opt/conda/lib/python3.10/site-packages/modelopt/torch/speculative/plugins/megatron_eagle.py:68: UserWarning: Fail to import megatron.core.post_training! EAGLE feature will be disable!
+  warnings.warn("Fail to import megatron.core.post_training! EAGLE feature will be disable!")
+2025-11-07 15:56:52,139	INFO engine_server.py:486 -- 3725 -- [EngineServer] Engine HTTP server started at http://10.10.12.120:30018
+2025-11-07 15:56:52,139	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 15:57:52,200	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 15:58:52,260	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 15:59:52,320	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 16:00:52,380	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 16:01:52,440	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 16:02:52,500	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 16:03:52,560	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 16:04:52,620	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 16:05:52,621	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
+2025-11-07 16:06:52,681	INFO engine_server.py:474 -- 3725 -- [EngineServer] Heartbeat log - Server is running at http://10.10.12.120:30018, type training
