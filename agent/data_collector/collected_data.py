@@ -314,3 +314,74 @@ class StackTraceData(CollectedData):
     def has_exception(self) -> bool:
         """是否包含异常信息"""
         return bool(self._stack_traces) and self._event_name == "exception"
+
+
+class DiagnosisObservationData(CollectedData):
+    """
+    Worker's diagnosis observation data.
+    
+    Contains the result of error code diagnosis, including matched error_type,
+    sub_error, and additional information.
+    
+    Args:
+        timestamp (datetime): Timestamp of diagnosis data.
+        observation (str): The observation description string.
+        extra_infos (dict): Additional information about the diagnosis.
+        node_id (int): Node ID. Defaults to -1.
+        node_type (str): Node type. Defaults to "".
+        node_rank (int): Node rank. Defaults to -1.
+    """
+
+    def __init__(
+        self,
+        timestamp: int = 0,
+        observation: str = "",
+        extra_infos: Optional[dict] = None,
+        node_id=env_utils.get_node_id(),
+        node_type=env_utils.get_node_type(),
+        node_rank=env_utils.get_node_rank(),
+    ):
+        super().__init__(
+            timestamp,
+            CollectedDataType.DIAGNOSIS_OBSERVATION,
+            observation,
+            node_id,
+            node_type,
+            node_rank,
+        )
+        self._observation = observation
+        self._extra_infos = extra_infos or {}
+
+    @property
+    def observation(self) -> str:
+        """获取诊断观察描述"""
+        return self._observation
+
+    @property
+    def extra_infos(self) -> dict:
+        """获取额外信息"""
+        return self._extra_infos
+
+    @property
+    def error_type(self) -> str:
+        """获取错误类型"""
+        return self._extra_infos.get("error_type", "")
+
+    @property
+    def sub_error(self) -> str:
+        """获取子错误类型"""
+        return self._extra_infos.get("sub_error", "")
+
+    @property
+    def reason(self) -> str:
+        """获取错误原因"""
+        return self._extra_infos.get("reason", "")
+
+    @property
+    def log_file(self) -> str:
+        """获取日志文件路径"""
+        return self._extra_infos.get("log_file", "")
+
+    def has_diagnosis(self) -> bool:
+        """是否包含诊断结果"""
+        return bool(self._observation) and bool(self._extra_infos)
