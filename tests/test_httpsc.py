@@ -9,10 +9,16 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+# 设置 error_type.json 环境变量
+os.environ["AUTO_RL_ERROR_TYPE_FILE"] = str(PROJECT_ROOT / "tests" / "error_type.json")
+# os.environ["AUTO_RL_ERROR_TYPE_FILE"] = "D:/dzqylycq/tests/error_type.json"
+
 from agent.data_collector.data_collector import DataCollector
 from agent.data_collector.constants import CollectedNodeType
 from agent.data_collector.metric_collector import MetricCollector
 from agent.data_collector.stack_collector import StackTraceCollector
+from agent.data_collector.observation_collector import ObservationCollector
 from agent.monitor.training import RLHFTrainingMonitor
 from agent.server import create_http_controller_handler
 from common import comm
@@ -139,6 +145,24 @@ def test_httpsc_end_to_end():
         )
         server_stack.start()
         time.sleep(0.2)
+        
+        # 创建 ObservationCollector（error_type_file 通过环境变量 AUTO_RL_ERROR_TYPE_FILE 传入）
+        test_log_file = Path(__file__).parent / "test_observation.log"
+        observation_collector = ObservationCollector(
+            log_file=str(test_log_file),
+            n_line=100
+        )
+        port_observation = find_free_port()
+        collectors_observation = {
+            CollectorType.OBSERVATION_COLLECTOR: observation_collector,
+        }
+        server_observation, servicer_observation = create_http_controller_handler(
+            host="127.0.0.1",
+            port=port_observation,
+            collectors=collectors_observation,
+        )
+        server_observation.start()
+        time.sleep(0.2)
 
         # 测试 1: 通过 HTTP get_state 端点直接采集数据
         # 每次请求都会触发一次新的数据采集
@@ -159,17 +183,20 @@ def test_httpsc_end_to_end():
         resource_data_1 = _get_state(port_usage, CollectorType.RESOURCE_COLLECTOR)
         metric_data_1 = _get_state(port_metric, CollectorType.METRIC_COLLECTOR)
         stack_data_1 = _get_state(port_stack, CollectorType.STACK_TRACE_COLLECTOR)
+        observation_data_1 = _get_state(port_observation, CollectorType.OBSERVATION_COLLECTOR)
         
         print("[Test] 第一次获取 log 数据:", log_data_1)
         print("[Test] 第一次获取 resource 数据:", resource_data_1)
         print("[Test] 第一次获取 metric 数据:", metric_data_1)
         print("[Test] 第一次获取 stack 数据:", stack_data_1)
+        print("[Test] 第一次获取 observation 数据:", observation_data_1)
         
         # 验证第一次采集
         assert log_data_1 is not None, "Log collector should return data"
         assert resource_data_1 is not None, "Resource collector should return data"
         assert metric_data_1 is not None, "Metric collector should return data"
         assert stack_data_1 is not None, "Stack collector should return data"
+        assert observation_data_1 is not None, "Observation collector should return data"
         
         # 验证 metric 数据内容
         if metric_data_1:
@@ -188,6 +215,18 @@ def test_httpsc_end_to_end():
             assert stack_data_1.pid == 3484, f"PID should be 3484, got {stack_data_1.pid}"
             assert len(stack_data_1.stack_traces) > 0, "Stack traces should not be empty"
         
+        # 验证 observation 数据内容
+        if observation_data_1:
+            print(f"[Test] Observation data: has_diagnosis={observation_data_1.has_diagnosis()}, "
+                  f"observation={observation_data_1.observation}")
+            print(f"[Test] Observation details: error_type={observation_data_1.error_type}, "
+                  f"sub_error={observation_data_1.sub_error}, reason={observation_data_1.reason}")
+            # assert observation_data_1.has_diagnosis(), "Observation should contain diagnosis"
+            # assert "node_failed" in observation_data_1.observation, f"Observation should contain 'node_failed', got {observation_data_1.observation}"
+            # assert observation_data_1.error_type == "RefEngineError", f"Error type should be RefEngineError, got {observation_data_1.error_type}"
+            # assert observation_data_1.sub_error == "InitializeError", f"Sub error should be InitializeError, got {observation_data_1.sub_error}"
+            # assert observation_data_1.reason != "", "Reason should not be empty"
+        
         # 等待一下，然后更新 metric 数据并再次采集
         time.sleep(0.1)
         metrics_data_2 = {
@@ -205,22 +244,34 @@ def test_httpsc_end_to_end():
         resource_data_2 = _get_state(port_usage, CollectorType.RESOURCE_COLLECTOR)
         metric_data_2 = _get_state(port_metric, CollectorType.METRIC_COLLECTOR)
         stack_data_2 = _get_state(port_stack, CollectorType.STACK_TRACE_COLLECTOR)
+        observation_data_2 = _get_state(port_observation, CollectorType.OBSERVATION_COLLECTOR)
         
         print("[Test] 第二次获取 log 数据:", log_data_2)
         print("[Test] 第二次获取 resource 数据:", resource_data_2)
         print("[Test] 第二次获取 metric 数据:", metric_data_2)
         print("[Test] 第二次获取 stack 数据:", stack_data_2)
+        print("[Test] 第二次获取 observation 数据:", observation_data_2)
         
         # 验证第二次采集
         assert log_data_2 is not None, "Log collector should return data on second request"
         assert resource_data_2 is not None, "Resource collector should return data on second request"
         assert metric_data_2 is not None, "Metric collector should return data on second request"
         assert stack_data_2 is not None, "Stack collector should return data on second request"
+        assert observation_data_2 is not None, "Observation collector should return data on second request"
         
         # 验证 metric 数据已更新
         if metric_data_2:
             metric_dict_2 = json.loads(metric_data_2.data_content)
             assert metric_dict_2["step"] == 200, "Second metric should have step 200"
+        
+        # 验证第二次 observation 数据（应该与第一次一致，因为日志内容没变）
+        if observation_data_2:
+            print(f"[Test] Observation data: has_diagnosis={observation_data_1.has_diagnosis()}, "
+                  f"observation={observation_data_1.observation}")
+            print(f"[Test] Observation details: error_type={observation_data_1.error_type}, "
+                  f"sub_error={observation_data_1.sub_error}, reason={observation_data_1.reason}")
+            # assert observation_data_2.has_diagnosis(), "Observation should still contain diagnosis on second request"
+            # assert observation_data_2.error_type == "FrameworkError", "Error type should still be RefEngineError"
         
         print("[Test] 直接采集测试通过!")
         
@@ -229,6 +280,7 @@ def test_httpsc_end_to_end():
         server_usage.stop()
         server_metric.stop()
         server_stack.stop()
+        server_observation.stop()
         # 清理测试文件
         if metrics_file.exists():
             os.remove(metrics_file)
