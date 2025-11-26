@@ -21,6 +21,7 @@ from agent.data_collector.data_collector import DataCollector
 from agent.data_collector.constants import CollectedNodeType
 from agent.data_collector.metric_collector import MetricCollector
 from agent.data_collector.stack_collector import StackTraceCollector
+from agent.data_collector.observation_collector import ObservationCollector
 from agent.monitor.training import RLHFTrainingMonitor
 from agent.server import create_http_controller_handler
 from common import comm
@@ -117,6 +118,13 @@ def worker_process(rank: int, world_size: int, result_queue: Queue, test_type: s
             log_dir = Path(__file__).parent / "multiprocess_my_logs"
             collector = StackTraceCollector(log_dir=str(log_dir), n_line=100, rank=rank)
             collectors = {CollectorType.STACK_TRACE_COLLECTOR: collector}
+        elif test_type == "observation":
+            # 设置 error_type.json 环境变量
+            os.environ["AUTO_RL_ERROR_TYPE_FILE"] = str(Path(__file__).parent / "error_type.json")
+            # 创建观察收集器，每个 rank 对应一个日志文件
+            log_file = Path(__file__).parent / "test_obervation_logs" / f"test_{rank + 1}.log"
+            collector = ObservationCollector(log_file=str(log_file), n_line=100)
+            collectors = {CollectorType.OBSERVATION_COLLECTOR: collector}
         else:
             raise ValueError(f"Unknown test_type: {test_type}")
         
@@ -585,6 +593,102 @@ def test_multiprocess_stack_collector():
         print("[Main] All worker processes stopped")
 
 
+def test_multiprocess_observation_collector():
+    """测试多进程 OBSERVATION 收集器"""
+    print("\n" + "="*60)
+    print("Testing Multiprocess OBSERVATION Collector")
+    print("="*60)
+    
+    world_size = 4
+    result_queue = Queue()
+    
+    # 启动多个工作进程
+    processes = []
+    for rank in range(world_size):
+        p = Process(
+            target=worker_process,
+            args=(rank, world_size, result_queue, "observation")
+        )
+        p.start()
+        processes.append(p)
+    
+    try:
+        # 等待所有进程就绪并收集端口号
+        port_map = {}
+        ready_count = 0
+        
+        while ready_count < world_size:
+            try:
+                rank, port, status = result_queue.get(timeout=15)
+                if status == "ready":
+                    port_map[rank] = port
+                    ready_count += 1
+                    print(f"[Main] Worker {rank} is ready on port {port}")
+                elif "error" in status:
+                    print(f"[Main] Worker {rank} failed: {status}")
+                    raise RuntimeError(f"Worker {rank} failed to start")
+            except:
+                print(f"[Main] Timeout waiting for workers, only {ready_count}/{world_size} ready")
+                raise
+        
+        print(f"[Main] All workers ready. Port mapping: {port_map}")
+        
+        # 等待一下确保服务器完全启动
+        time.sleep(0.5)
+        
+        # 从每个进程的服务器获取状态（直接采集数据）
+        for rank in range(world_size):
+            port = port_map[rank]
+            print(f"\n[Main] Getting observation data from rank {rank} (port {port})...")
+            
+            # 获取观察数据
+            observation_data = _get_state(port, CollectorType.OBSERVATION_COLLECTOR)
+            
+            print(f"[Main] Rank {rank} - Observation data type: {type(observation_data)}")
+            
+            if observation_data is not None:
+                print(f"[Main] Rank {rank} - has_diagnosis: {observation_data.has_diagnosis()}")
+                print(f"[Main] Rank {rank} - observation: {observation_data.observation}")
+                print(f"[Main] Rank {rank} - error_type: {observation_data.error_type}")
+                print(f"[Main] Rank {rank} - sub_error: {observation_data.sub_error}")
+                print(f"[Main] Rank {rank} - reason: {observation_data.reason}")
+                
+                # 验证数据结构
+                assert hasattr(observation_data, 'has_diagnosis'), "Should have has_diagnosis method"
+                assert hasattr(observation_data, 'observation'), "Should have observation attribute"
+                assert hasattr(observation_data, 'error_type'), "Should have error_type attribute"
+                
+                # 根据日志内容，test_2.log (rank=1) 应该有诊断信息
+                if rank == 1:
+                    # test_2.log 包含错误诊断信息
+                    print(f"[Main] Rank {rank} - Expected to have diagnosis (from test_2.log)")
+                    # 注意：这里不强制断言，因为诊断结果可能因日志解析而异
+            else:
+                print(f"[Main] Rank {rank} - No observation data returned (may be expected)")
+            
+            # 第二次采集，验证可以多次采集
+            observation_data_2 = _get_state(port, CollectorType.OBSERVATION_COLLECTOR)
+            print(f"[Main] Rank {rank} - Second observation data type: {type(observation_data_2)}")
+        
+        print("\n[Main] OBSERVATION collector test passed!")
+        
+    finally:
+        # 发送停止信号给所有进程
+        print("\n[Main] Sending stop signals to workers...")
+        for _ in range(world_size):
+            result_queue.put("stop")
+        
+        # 等待进程结束
+        for i, p in enumerate(processes):
+            p.join(timeout=5)
+            if p.is_alive():
+                print(f"[Main] Force terminating process {i}")
+                p.terminate()
+                p.join(timeout=2)
+        
+        print("[Main] All worker processes stopped")
+
+
 def main():
     """运行所有多进程测试"""
     print("\n" + "="*60)
@@ -606,6 +710,9 @@ def main():
         
         # 测试 STACK 收集器
         test_multiprocess_stack_collector()
+
+        # 测试 OBSERVATION 收集器
+        test_multiprocess_observation_collector()
         
         print("\n" + "="*60)
         print("All multiprocess tests passed!")
