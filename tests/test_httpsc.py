@@ -11,7 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # 设置 error_type.json 环境变量
-os.environ["AUTO_RL_ERROR_TYPE_FILE"] = str(PROJECT_ROOT / "tests" / "error_type.json")
+os.environ["AUTO_RL_ERROR_TYPE_FILE"] = str(PROJECT_ROOT / "agent" / "diagnose" / "error_type.json")
 # os.environ["AUTO_RL_ERROR_TYPE_FILE"] = "D:/dzqylycq/tests/error_type.json"
 
 from agent.data_collector.data_collector import DataCollector
