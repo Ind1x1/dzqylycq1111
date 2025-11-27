@@ -16,16 +16,7 @@ from util.func_util import {
     threading_timeout,
 }
 
-
-
-class DiagnosisObservation(metaclass=ABCMeta):
-    def __init__(self, observation:str = ""):
-        self._observation = observation
-        self.extra_infos: Dict[str, str] = {}
-
-    @property
-    def observation(self):
-        return self._observation
+from agent.diagnose.observation import DiagnosisObservation
 
 class Diagnostician:
     """

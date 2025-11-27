@@ -23,25 +23,10 @@ from typing import Optional
 from common.log import default_logger as logger
 from agent.data_collector.constants import DiagnosisErrorConstant
 from agent.data_collector.log_collector import TrainingLogCollector
+from agent.diagnose.observation import DiagnosisObservation
+from controller.diagnosis.diagnostician import Diagnostician
 
-
-class DiagnosisObservation:
-    """
-    DiagnosisObservation is to describe the problem observed
-    by ErrorCodeDiagnostician.observe
-    """
-
-    def __init__(self, observation: str = ""):
-        # The simple description info for the problem.
-        self._observation: str = observation
-        self.extra_infos: dict = {}
-
-    @property
-    def observation(self):
-        return self._observation
-
-
-class ErrorCodeDiagnostician:
+class ErrorCodeDiagnostician(Diagnostician):
     """
     ErrorCodeDiagnostician is to observe and resolve the failure node problem
     by checking error codes from error_type.json

@@ -1,6 +1,3 @@
-class DiagnosisConstants(object):
-    MIN_DIAGNOSIS_INTERVAL = 15
-
 class DiagnosisActionType(object):
     # common
     NONE = "no_action"
@@ -29,3 +26,10 @@ class DiagnosisConstant(object):
     MAX_ACTION_QUEUE_SIZE = 1000
 
     MIN_DIAGNOSIS_INTERVAL = 15
+
+class DiagnosisDataType:
+    STACK_TRACE = "STACK_TRACE"
+    TRAINING_LOG = "TRAINING_LOG"
+    TRAINING_METRIC = "TRAINING_METRIC"
+    RESOURCE_METRIC = "RESOURCE_METRIC"
+    GENERIC = "GENERIC"
